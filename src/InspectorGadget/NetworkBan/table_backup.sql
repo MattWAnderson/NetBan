@@ -3,7 +3,8 @@ CREATE TABLE `banned` (
 	`username` TEXT NOT NULL,
 	`ip` TEXT NOT NULL,
 	`cid` TEXT NOT NULL,
-	`bannedBy` TEXT NOT NULL
+	`bannedBy` TEXT NOT,
+	`bannedTime` date NOT NULL
 );
 
 CREATE TABLE `exempt` (

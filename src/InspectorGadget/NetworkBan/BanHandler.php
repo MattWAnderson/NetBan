@@ -58,6 +58,7 @@ class BanHandler {
 	}
 
 	public function isBanned($playerName) {
+        $currentTime = time();
 		$playerName = strtolower($playerName);
 		$sql = "SELECT * FROM $this->banTable WHERE username = ?";
 		$stmt = mysqli_stmt_init($this->database);
@@ -70,8 +71,14 @@ class BanHandler {
 			mysqli_stmt_execute($stmt);
 			$store = mysqli_stmt_get_result($stmt);
 			$row = mysqli_num_rows($store);
-
 			if ($row > 0) {
+                $data = $this->getBannedData($playerName);
+                $bannedTime = $data['bannedTime'];
+                $banDuration = $data['bannedDuration'];
+			    if ($currentTime > ($bannedTime + $banDuration)) { // Remove ban if time expired
+                    $this->pardonPlayer($playerName, "Ban Time Expired");
+                return false;
+            } else // Send true if ban not expired
 				return true;
 			} else {
 				return false;
@@ -79,24 +86,25 @@ class BanHandler {
 		}
 	}
 
-	public function banPlayer(Player $player, $sender) {
+	public function banPlayer(Player $player, $sender, $banDuration) {
 		$raw_username = $player->getName();
 		$username = strtolower($player->getName());
 		$ip = $player->getAddress();
+        $bannedTime = time();
 		$cid = $player->getClientId();
 		$skin = $player->getSkin()->getSkinData();
 		$bannedBy = $sender->getName();
 
 		if (!$this->isExempted($username)) {
 
-			$sql = "INSERT INTO $this->banTable(username, skin, ip, cid, bannedBy) VALUES (?, ?, ?, ?, ?)";
+			$sql = "INSERT INTO $this->banTable(username, skin, ip, cid, bannedBy, bannedTime, banDuration) VALUES (?, ?, ?, ?, ?, ?, ?)";
 			$stmt = mysqli_stmt_init($this->database);
 
 			if (!mysqli_stmt_prepare($stmt, $sql)) {
 				$sender->sendMessage("MySQL Error : Ban Player");
 				return true;
 			} else {
-				mysqli_stmt_bind_param($stmt, "sssss", $username, $skin, $ip, $cid, $bannedBy);
+				mysqli_stmt_bind_param($stmt, "sssss", $username, $skin, $ip, $cid, $bannedBy, $bannedTime, $banDuration);
 				$result = mysqli_stmt_execute($stmt);
 
 				if ($result) {

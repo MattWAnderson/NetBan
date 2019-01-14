@@ -50,7 +50,7 @@ class MainHandler extends PluginBase implements Listener {
 			$this->connectMySQL();
 			$this->getServer()->getPluginManager()->registerEvents($this, $this);
 
-			$this->mysqli->query("CREATE TABLE IF NOT EXISTS `banned`(`id` int(11) PRIMARY KEY AUTO_INCREMENT NOT NULL, `username` TEXT NOT NULL, `skin` TEXT NOT NULL, `ip` TEXT NOT NULL, `cid` TEXT NOT NULL, `bannedBy` TEXT NOT NULL)");
+			$this->mysqli->query("CREATE TABLE IF NOT EXISTS `banned`(`id` int(11) PRIMARY KEY AUTO_INCREMENT NOT NULL, `username` TEXT NOT NULL, `skin` TEXT NOT NULL, `ip` TEXT NOT NULL, `cid` TEXT NOT NULL, `bannedBy` TEXT NOT NULL, `bannedTime` DATE NOT NULL, `banDuration` INT NOT NULL, )");
 			$this->mysqli->query("CREATE TABLE IF NOT EXISTS `exempt` (`id` int(11) PRIMARY KEY AUTO_INCREMENT NOT NULL, `username` TEXT NOT NULL)");
 
 			$this->getLogger()->info("Everything is setup!");
@@ -111,23 +111,37 @@ class MainHandler extends PluginBase implements Listener {
 
 							case "help":
 
-								$sender->sendMessage(TF::GREEN . "Commands: \n - /nban ban {player} | Player must be online! \n - /nban pardon {player} | Unbans a player!");
+								$sender->sendMessage(TF::GREEN . "Commands: \n - /nban ban {player} {seconds}| Player must be online and 0 is forever! \n - /nban pardon {player} | Unbans a player!");
 
 								return true;
 							break;
 
 							case "ban":
 
-								if (isset($args[1])) {
+                                if (isset($args[1])) {
+                                    $value = $args[1];
+                                    $player = $this->getServer()->getPlayer($value);
+                                    if ($player instanceof Player) {
+                                        $this->returnBanHandler()->banPlayer($player, $sender, 0);
+                                    } else {
+                                        $sender->sendMessage(TF::RED . "$value isn't a valid Player!");
+                                    }
+                                } else {
+                                         $sender->sendMessage(TF::GREEN . "[Usage] /nban ban {player}");
+                                     }
+
+
+                        if (isset($args[2])) {
 									$value = $args[1];
+                                    $banDuration = $args[2];
 									$player = $this->getServer()->getPlayer($value);
 									if ($player instanceof Player) {
-										$this->returnBanHandler()->banPlayer($player, $sender);
+										$this->returnBanHandler()->banPlayer($player, $sender, $banDuration);
 									} else {
 										$sender->sendMessage(TF::RED . "$value isn't a valid Player!");
 									}
 								} else {
-									$sender->sendMessage(TF::GREEN . "[Usage] /nban ban {player}");
+									$sender->sendMessage(TF::GREEN . "[Usage] /nban ban {player} {seconds}");
 								}
 
 								return true;
